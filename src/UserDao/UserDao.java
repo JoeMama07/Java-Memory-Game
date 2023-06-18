@@ -1,3 +1,7 @@
+package UserDao;
+
+import MemoryGame.StartGame;
+
 import java.sql.*;
 import java.util.Scanner;
 
@@ -44,7 +48,9 @@ public class UserDao {
 
         if (userExists) {
             // Continue to the game
-            System.out.println("continue");
+//            System.out.println("continue");
+            StartGame startGame = new StartGame();
+            startGame.difficultySelection();
         } else {
             System.out.println("Wrong id or username.");
             System.out.println("Do you wish to update your username or create a new account? Type 'update' for updating username or 'register' to create new account");

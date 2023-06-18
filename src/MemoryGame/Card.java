@@ -1,3 +1,5 @@
+package MemoryGame;
+
 public class Card {
         private int  value;
         private boolean revealed;

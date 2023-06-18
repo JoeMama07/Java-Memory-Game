@@ -1,9 +1,11 @@
+package MemoryGame;
+
 import java.util.Scanner;
 
-public class Test {
-        public static void main(String[] args) {
+public class StartGame {
+        public void difficultySelection() {
             Scanner scanner = new Scanner(System.in);
-            System.out.println("Welcome to Memory Game!");
+//            System.out.println("Welcome to Memory Game!");
 
             while (true) {
                 System.out.println("Choose a level: (1) Easy, (2) Medium, (3) Hard, or (0) Quit");
