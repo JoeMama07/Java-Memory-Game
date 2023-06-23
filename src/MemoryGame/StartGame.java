@@ -27,7 +27,7 @@ public class StartGame {
 
                 int remainingTries = memoryGame.maxTries;
 
-                while (remainingTries > 0 && memoryGame.numMatches < (memoryGame.board.length * memoryGame.board[0].length) / 2) {
+                while (!memoryGame.isGameOver()) {
                     System.out.println("Guess a card (row column): ");
                     int row = scanner.nextInt() - 1; // Subtract 1 to adjust for 0-based indexing
                     int col = scanner.nextInt() - 1; // Subtract 1 to adjust for 0-based indexing
@@ -39,9 +39,13 @@ public class StartGame {
 
                 if (memoryGame.numMatches == (memoryGame.board.length * memoryGame.board[0].length) / 2) {
                     System.out.println("Congratulations! You have matched all pairs within " + memoryGame.maxTries + " tries.");
-                } else {
-                    System.out.println("Game over. You did not match all pairs within " + memoryGame.maxTries + " tries.");
                 }
+
+                int totalScore = memoryGame.getTotalScore();
+                System.out.println("Total Score: " + totalScore);
+
+//                DatabaseConnector databaseConnector = new DatabaseConnector();
+//                databaseConnector.saveScoreToDatabase(totalScore);
             }
         }
     }

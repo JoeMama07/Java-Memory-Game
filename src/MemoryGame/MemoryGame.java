@@ -13,6 +13,7 @@ import java.util.List;
         private int remainingTries;
         private int lastRow;
         private int lastCol;
+        private int totalScore;
 
         public MemoryGame(int level) {
             this.cardList = new ArrayList<>();
@@ -31,6 +32,7 @@ import java.util.List;
             numMatches = 0;
             lastRow = -1;
             lastCol = -1;
+            totalScore = 0; // Initialize total score as 0
         }
 
         public void initializeBoard() {
@@ -114,11 +116,32 @@ import java.util.List;
             }
 
             System.out.println("Remaining tries: " + remainingTries);
+            if (numMatches == cardList.size() / 2) {
+                System.out.println("Congratulations! You found all the matches.");
+                totalScore = calculateTotalScore();
+                return false;
+            }
+
+            if (remainingTries <= 0) {
+                System.out.println("Game over! You have reached the maximum number of tries.");
+                totalScore = calculateTotalScore();
+                return false;
+            }
             return true;
         }
-
+        int calculateTotalScore() {
+            return (numMatches * 1) + (remainingTries * 10);
+        }
         private boolean isValidPosition(int row, int col) {
             return row >= 0 && row < board.length && col >= 0 && col < board[0].length;
+        }
+
+        public boolean isGameOver() {
+            return remainingTries <= 0;
+        }
+
+        public int getTotalScore() {
+            return totalScore;
         }
     }
     
