@@ -1,37 +1,65 @@
 package UserDao;
 
 import MemoryGame.StartGame;
+import Messages.Messages;
 
 import java.sql.*;
 import java.util.Scanner;
 
 public class UserDao {
     Scanner scanner = new Scanner(System.in);
+    Messages messages = new Messages();
+    StartGame startGame = new StartGame();
+
+    private static Connection con;
+
+    public Connection getConnection() {
+        return con;
+    }
+
+    public void setConnection(String DB_URL, String USER, String PASSWORD) {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+
+        } catch (Exception e) {
+            messages.defaultErrorMessage(e.getMessage());
+        }
+    }
+
+    private static int userID;
+
+    public int getUserId() {
+        return userID;
+    }
+
+    public void setUserId(int id) {
+        userID = id;
+    }
 
     public void dbConnection(String DB_URL, String USER, String PASSWORD) {
 
-        System.out.println("If you have an account type 'login' or 'register' if you don't have an account");
+        System.out.println("If you have an account type 'l' or 'r' if you don't have an account:");
 
         String authentication = scanner.nextLine();
 
-        // Connect to db
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection con = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+//        // Connect to db
+//        try {
+//            Class.forName("com.mysql.cj.jdbc.Driver");
+//            con = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+//
+        setConnection(DB_URL, USER, PASSWORD);
 
-            // Create starting statement
-            Statement statement = con.createStatement();
-
-            if (authentication.equals("login")) {
-                login(con);
-            } else {
-                signup(con);
-            }
-
-
-        } catch (Exception e) {
-            System.out.println(e);
+        if (authentication.equals("l")) {
+            login(getConnection());
+        } else if (authentication.equals("r")) {
+            signup(getConnection());
+        } else {
+            messages.invalidMessage();
         }
+//        } catch (Exception e) {
+//            messages.defaultErrorMessage(e.getMessage());
+//        }
 
     }
 
@@ -40,43 +68,70 @@ public class UserDao {
         System.out.println("Username:");
         String username = scanner.next();
 
-        System.out.println("ID:");
-        String ID = scanner.next();
+        System.out.println("Password:");
+        String password = scanner.next();
+
+        // Get userID query
+        String query = "Select id from users where user_name = ? AND `password` = ? ";
 
         // Validate if user already exists
-        boolean userExists = validateUser(username, ID, con);
+        boolean userExists = validateUser(username, password, getConnection());
 
         if (userExists) {
+
+            // Get userID and save in user_ID variable
+            try {
+                PreparedStatement statement = getConnection().prepareStatement(query);
+                statement.setString(1, username);
+                statement.setString(2, password);
+
+                ResultSet rs = statement.executeQuery();
+                while (rs.next()) {
+                    // Save the id the user gets into user_ID
+                    setUserId(rs.getInt("id"));
+//                    user_ID = rs.getInt("id");
+                }
+            } catch (SQLException e) {
+                messages.defaultErrorMessage(e.getMessage());
+            }
+
             // Continue to the game
-//            System.out.println("continue");
-            StartGame startGame = new StartGame();
+            messages.successMessage("Welcome " + username);
             startGame.difficultySelection();
         } else {
-            System.out.println("Wrong id or username.");
-            System.out.println("Do you wish to update your username or create a new account? Type 'update' for updating username or 'register' to create new account");
+            messages.errorMessage("Something went wrong.");
+            System.out.println("Do you wish to update your password or create a new account?");
+            System.out.println("Type 'u' for updating password or 'r' to create new account or 't' to retry login:");
             String choose = scanner.next();
 
-            if (choose.equals("update")) {
-                updateUser(con);
-            } else if (choose.equals("register")) {
-                signup(con);
+            if (choose.equals("u")) {
+                updateUser(username, getConnection());
+            } else if (choose.equals("r")) {
+                signup(getConnection());
+            } else if (choose.equals("t")) {
+                login(getConnection());
+            } else {
+                messages.invalidMessage();
             }
         }
     }
 
     public void signup(Connection con) {
         // Create insert query
-        String query = "Insert into users(user_name,birth_date) values (?,?)";
+        String query = "Insert into users(user_name,birth_date, password) values (?,?,?)";
 
         // Query to get the user id
         String getUserID = "select id from users order by id desc limit 1";
 
         // Get input from user
-        System.out.println("Username:");
+        System.out.println("Username: ");
         String userName = scanner.next();
 
         System.out.println("Birthdate: 'year-month-day'");
         String birthdate = scanner.next();
+
+        System.out.println("Password: ");
+        String password = scanner.next();
 
         // Prepare statement
         PreparedStatement statement = null;
@@ -86,28 +141,30 @@ public class UserDao {
             // Replace '?' in query with user inputs
             statement.setString(1, userName);
             statement.setString(2, birthdate);
+            statement.setString(3, password);
             statement.executeUpdate();
-
-            // Continue to the game
-            System.out.println("Register successful");
 
             // Get user id after data inserted into database
             ResultSet rs = statement.executeQuery(getUserID);
             while (rs.next()) {
-                System.out.println("Your account code is: " + rs.getInt("id"));
-                System.out.println("Use this code to login");
+                // Save the id the user gets saved into user_ID
+                setUserId(rs.getInt("id"));
+                messages.successMessage("Registered successful");
+//                System.out.println("Your account code is: " + rs.getInt("id"));
             }
 
+            startGame.difficultySelection();
+
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            messages.defaultErrorMessage(e.getMessage());
         }
     }
 
-    public static boolean validateUser(String username, String ID, Connection con) {
+    public static boolean validateUser(String username, String pass, Connection con) {
         boolean userExists = false;
 
         // Select query that returns the total users in the table
-        String sql = "SELECT COUNT(*) FROM users WHERE user_name = ? AND id = ?";
+        String sql = "SELECT COUNT(*) FROM users WHERE user_name = ? AND password = ?";
 
         PreparedStatement statement = null;
 
@@ -117,7 +174,7 @@ public class UserDao {
 
             // Replace '?' in sql with username parameter
             statement.setString(1, username);
-            statement.setString(2, ID);
+            statement.setString(2, pass);
 
             // Save query response in result
             ResultSet result = statement.executeQuery();
@@ -137,25 +194,24 @@ public class UserDao {
         return userExists;
     }
 
-    public void updateUser(Connection con) {
+    public void updateUser(String username, Connection con) {
         // Create update query
-        String query = "Update users set user_name = ? where id = ?";
+        String query = "Update users set password = ? where user_name = ?";
 
-        System.out.println("What do you wish to change your username too?");
-        String changedUsername = scanner.next();
-
-        System.out.println("What is your account code?");
-        String accountCode = scanner.next();
+        System.out.println("Enter new password:  ");
+        String newPassword = scanner.next();
 
         PreparedStatement statement = null;
 
         try {
             statement = con.prepareStatement(query);
-            statement.setString(1, changedUsername);
-            statement.setString(2, accountCode);
+            statement.setString(1, newPassword);
+            statement.setString(2, username);
             statement.executeUpdate();
 
-            System.out.println("Username successfully update to " + changedUsername);
+            messages.successMessage("Password updated successfully");
+
+            startGame.difficultySelection();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
