@@ -1,5 +1,13 @@
 package MemoryGame;
 
+import Config.Config;
+import Messages.Messages;
+import UserDao.UserDao;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -142,6 +150,25 @@ import java.util.List;
 
         public int getTotalScore() {
             return totalScore;
+        }
+
+        public void saveScoreToDatabase(int score){
+            UserDao userDao = new UserDao();
+            Config config = new Config();
+            Messages message = new Messages();
+            // Query
+            String query = "INSERT INTO scores (score, user_id) VALUES (?,?)";
+
+            try(Connection connection = DriverManager.getConnection(config.DB_URL, config.USER, config.PASSWORD)) {
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, score);
+                statement.setInt(2,userDao.getUserId());
+                statement.executeUpdate();
+                System.out.println("Score saved to the database: " + score);
+            } catch (SQLException e) {
+                message.defaultErrorMessage(e.getMessage());
+//                System.out.println("Error saving score to the database: " + e.getMessage());
+            }
         }
     }
     

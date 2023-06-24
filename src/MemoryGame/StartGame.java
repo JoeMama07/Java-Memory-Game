@@ -1,17 +1,21 @@
 package MemoryGame;
 
+import Config.ApplicationRunning;
+
 import java.util.Scanner;
 
 public class StartGame {
         public void difficultySelection() {
             Scanner scanner = new Scanner(System.in);
-//            System.out.println("Welcome to Memory Game!");
+            ApplicationRunning isRunning = new ApplicationRunning();
+            Scoreboard scoreboard = new Scoreboard();
 
-            while (true) {
+            while (isRunning.getIsRunning()) {
                 System.out.println("Choose a level: (1) Easy, (2) Medium, (3) Hard, or (0) Quit");
                 int level = scanner.nextInt();
 
                 if (level == 0) {
+                    isRunning.setIsRunning(false);
                     System.out.println("Thank you for playing. Goodbye!");
                     break;
                 }
@@ -44,9 +48,10 @@ public class StartGame {
                 int totalScore = memoryGame.getTotalScore();
                 System.out.println("Total Score: " + totalScore);
 
-//                DatabaseConnector databaseConnector = new DatabaseConnector();
-//                databaseConnector.saveScoreToDatabase(totalScore);
+                memoryGame.saveScoreToDatabase(totalScore);
+                scoreboard.showLeaderboard();
             }
+            isRunning.setIsRunning(false);
         }
     }
 
